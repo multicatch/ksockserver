@@ -1,4 +1,4 @@
-package io.github.multicatch.http
+package io.github.multicatch.khttp.http
 
 data class HttpRequest(
         val method: HttpMethod,

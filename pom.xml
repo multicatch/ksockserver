@@ -11,6 +11,9 @@
 
     <modules>
         <module>khttpserver-core</module>
+        <module>khttpserver-static-pages</module>
+        <module>khttpserver-dispatcher</module>
+        <module>khttpserver-example</module>
     </modules>
 
     <properties>

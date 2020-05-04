@@ -1,7 +1,7 @@
-package io.github.multicatch
+package io.github.multicatch.khttp
 
-import io.github.multicatch.http.HttpMethod
-import io.github.multicatch.http.HttpRequest
+import io.github.multicatch.khttp.http.HttpMethod
+import io.github.multicatch.khttp.http.HttpRequest
 import java.io.BufferedReader
 import java.io.InputStream
 

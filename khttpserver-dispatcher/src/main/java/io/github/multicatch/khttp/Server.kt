@@ -1,7 +1,7 @@
-package io.github.multicatch
+package io.github.multicatch.khttp
 
-import io.github.multicatch.http.HttpRequest
-import io.github.multicatch.http.HttpResponse
+import io.github.multicatch.khttp.http.HttpRequest
+import io.github.multicatch.khttp.http.HttpResponse
 import java.net.ServerSocket
 import java.util.concurrent.Executors
 

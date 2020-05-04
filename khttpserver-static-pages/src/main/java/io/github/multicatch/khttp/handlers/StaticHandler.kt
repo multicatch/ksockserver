@@ -1,8 +1,9 @@
-package io.github.multicatch.handlers
+package io.github.multicatch.khttp.handlers
 
-import io.github.multicatch.http.HttpRequest
-import io.github.multicatch.http.HttpResponse
-import io.github.multicatch.http.HttpStatus
+import io.github.multicatch.khttp.http.exceptions.NotFoundException
+import io.github.multicatch.khttp.http.HttpRequest
+import io.github.multicatch.khttp.http.HttpResponse
+import io.github.multicatch.khttp.http.HttpStatus
 
 fun static(path: String): (HttpRequest) -> HttpResponse = {
     val responseEntity = Thread.currentThread()
@@ -10,7 +11,7 @@ fun static(path: String): (HttpRequest) -> HttpResponse = {
             .getResourceAsStream(path)
             ?.bufferedReader()
             ?.readText()
-            ?: ""
+            ?: throw NotFoundException()
 
     HttpResponse(
             status = HttpStatus.OK,

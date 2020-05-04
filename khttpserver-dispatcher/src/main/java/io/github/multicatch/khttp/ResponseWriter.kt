@@ -1,6 +1,6 @@
-package io.github.multicatch
+package io.github.multicatch.khttp
 
-import io.github.multicatch.http.HttpResponse
+import io.github.multicatch.khttp.http.HttpResponse
 import java.io.OutputStream
 
 fun OutputStream.write(response: HttpResponse) {
