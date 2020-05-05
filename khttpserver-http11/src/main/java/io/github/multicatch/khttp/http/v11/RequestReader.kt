@@ -1,4 +1,4 @@
-package io.github.multicatch.khttp
+package io.github.multicatch.khttp.http.v11
 
 import io.github.multicatch.khttp.http.HttpMethod
 import io.github.multicatch.khttp.http.HttpRequest

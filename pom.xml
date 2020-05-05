@@ -14,6 +14,7 @@
         <module>khttpserver-static-pages</module>
         <module>khttpserver-dispatcher</module>
         <module>khttpserver-example</module>
+        <module>khttpserver-http11</module>
     </modules>
 
     <properties>
