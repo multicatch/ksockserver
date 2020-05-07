@@ -5,16 +5,16 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.multicatch</groupId>
-    <artifactId>khttpserver</artifactId>
+    <artifactId>ksockserver</artifactId>
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
 
     <modules>
-        <module>khttpserver-core</module>
-        <module>khttpserver-static-pages</module>
-        <module>khttpserver-dispatcher</module>
-        <module>khttpserver-example</module>
-        <module>khttpserver-http11</module>
+        <module>ksockserver-http-core</module>
+        <module>ksockserver-http-server</module>
+        <module>ksockserver-static-pages</module>
+        <module>ksockserver-dispatcher</module>
+        <module>ksockserver-example</module>
     </modules>
 
     <properties>
