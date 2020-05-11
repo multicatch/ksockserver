@@ -7,11 +7,7 @@ import io.github.multicatch.ksock.http.HttpStatus
 import java.net.Socket
 
 class Http11 : HttpProtocol {
-    private val urls: MutableList<Pair<String, (HttpRequest) -> HttpResponse>> = mutableListOf()
-
-    override fun registerUrl(baseUrl: String, handler: (HttpRequest) -> HttpResponse) {
-        urls += baseUrl to handler
-    }
+    override val urls: MutableList<Pair<String, (HttpRequest) -> HttpResponse>> = mutableListOf()
 
     override fun process(connection: Socket) {
         val request = connection.getInputStream()
@@ -31,7 +27,7 @@ class Http11 : HttpProtocol {
 
     private fun String.handler() = urls.toList()
             .find { (baseUrl, _) ->
-                this.startsWith(baseUrl)
+                this.startsWith(baseUrl) || "$this/".startsWith(baseUrl)
             }
             ?: this to { _ -> DEFAULT_RESPONSE }
 }

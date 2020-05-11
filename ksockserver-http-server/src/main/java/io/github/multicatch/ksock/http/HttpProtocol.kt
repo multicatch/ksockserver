@@ -4,10 +4,17 @@ import io.github.multicatch.ksock.tcp.TcpServerConfiguration
 import io.github.multicatch.ksock.tcp.TcpProtocolProcessor
 
 interface HttpProtocol : TcpProtocolProcessor {
-    fun registerUrl(baseUrl: String, handler: (HttpRequest) -> HttpResponse)
+    val urls: MutableList<Pair<String, (HttpRequest) -> HttpResponse>>
 }
 
 fun TcpServerConfiguration<out HttpProtocol>.url(baseUrl: String, configuration: HttpConfig.() -> Unit) {
     val config = HttpConfig().apply(configuration)
-    protocol.registerUrl(baseUrl, config.handler)
+    protocol.urls.add(baseUrl to config.handler)
+
+    config.aliasRules.forEach { (aliasUrl, targetUrl) ->
+        val target = "$baseUrl/${targetUrl.trimStart('/')}"
+        val alias = "$baseUrl/${aliasUrl.trimStart('/')}"
+
+        alias(alias, target)
+    }
 }
