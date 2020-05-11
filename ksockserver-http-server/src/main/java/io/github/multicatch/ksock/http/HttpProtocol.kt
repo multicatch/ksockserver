@@ -4,9 +4,9 @@ import io.github.multicatch.ksock.tcp.TcpServerConfiguration
 import io.github.multicatch.ksock.tcp.TcpProtocolProcessor
 
 interface HttpProtocol : TcpProtocolProcessor {
-    val urls: MutableMap<String, (HttpRequest) -> HttpResponse>
+    fun registerUrl(baseUrl: String, handler: (HttpRequest) -> HttpResponse)
 }
 
-fun TcpServerConfiguration<out HttpProtocol>.url(path: String, mapping: () -> (HttpRequest) -> HttpResponse) {
-    protocol.urls[path] = mapping()
+fun TcpServerConfiguration<out HttpProtocol>.url(baseUrl: String, mapping: () -> (HttpRequest) -> HttpResponse) {
+    protocol.registerUrl(baseUrl, mapping())
 }

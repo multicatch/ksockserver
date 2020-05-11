@@ -6,7 +6,7 @@ import java.io.OutputStream
 fun OutputStream.write(response: HttpResponse) {
     with(bufferedWriter()) {
         write("""HTTP/1.1 ${response.status.code} ${response.status.description}
-Server: khttpserver
+Server: ksockserver
 Content-Length: ${response.entityLength()}
 ${response.headers.toStringHeaders()}
 
