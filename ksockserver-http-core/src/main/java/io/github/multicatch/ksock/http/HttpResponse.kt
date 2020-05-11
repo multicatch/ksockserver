@@ -14,3 +14,5 @@ enum class HttpStatus(val code: Int, val description: String) {
     NOT_FOUND(404, "Not Found"),
     INTERNAL_SERVER_ERROR(500, "Internal Server Error");
 }
+
+fun Int.toHttpStatus() = HttpStatus.values().first { it.code == this }

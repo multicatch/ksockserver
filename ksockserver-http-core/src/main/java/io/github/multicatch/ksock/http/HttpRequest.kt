@@ -18,3 +18,13 @@ enum class HttpMethod {
     PUT,
     DELETE
 }
+
+fun Sequence<String>.extractHeaders() = takeWhile { line ->
+            line.isNotBlank()
+        }
+        .map { header ->
+            with(header.indexOf(":")) {
+                header.substring(0, this).toLowerCase() to header.substring(this + 1).trim()
+            }
+        }
+        .toMap()

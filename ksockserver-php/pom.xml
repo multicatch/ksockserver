@@ -9,24 +9,13 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>ksockserver-example</artifactId>
+    <artifactId>ksockserver-php</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>io.github.multicatch</groupId>
-            <artifactId>ksockserver-http-server</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.multicatch</groupId>
-            <artifactId>ksockserver-static-pages</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.multicatch</groupId>
-            <artifactId>ksockserver-php</artifactId>
+            <artifactId>ksockserver-http-core</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
-
 </project>

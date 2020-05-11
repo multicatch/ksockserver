@@ -2,6 +2,7 @@ package io.github.multicatch.ksock.http.v11
 
 import io.github.multicatch.ksock.http.HttpMethod
 import io.github.multicatch.ksock.http.HttpRequest
+import io.github.multicatch.ksock.http.extractHeaders
 import java.io.BufferedReader
 import java.io.InputStream
 
@@ -18,12 +19,14 @@ fun InputStream.readRequest(remoteAddress: String) = with(bufferedReader()) {
             .flatMap { it.split("=").zipWithNext() }
             .toMap()
 
+    val resourceWithoutParams = resource.substringBeforeLast("?")
+
     val headers = extractHeaders()
     val contentLength = headers.getOrDefault(ENTITY_SIZE_HEADER, "0").toLong()
 
     HttpRequest(
             method = method,
-            resourceUri = resource,
+            resourceUri = resourceWithoutParams,
             queryParams = queryParams,
             httpVersion = httpVersion,
             headers = headers,
@@ -32,16 +35,7 @@ fun InputStream.readRequest(remoteAddress: String) = with(bufferedReader()) {
     )
 }
 
-fun BufferedReader.extractHeaders() = lineSequence()
-        .takeWhile { line ->
-            line.isNotBlank()
-        }
-        .map { header ->
-            with(header.indexOf(":")) {
-                header.substring(0, this).toLowerCase() to header.substring(this + 1).trim()
-            }
-        }
-        .toMap()
+fun BufferedReader.extractHeaders() = lineSequence().extractHeaders()
 
 fun BufferedReader.extractEntity(contentLength: Long) = mutableListOf<Byte>()
         .also { byteList ->

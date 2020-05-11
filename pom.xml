@@ -15,6 +15,7 @@
         <module>ksockserver-static-pages</module>
         <module>ksockserver-dispatcher</module>
         <module>ksockserver-example</module>
+        <module>ksockserver-php</module>
     </modules>
 
     <properties>

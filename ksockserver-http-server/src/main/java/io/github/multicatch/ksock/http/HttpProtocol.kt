@@ -7,6 +7,7 @@ interface HttpProtocol : TcpProtocolProcessor {
     fun registerUrl(baseUrl: String, handler: (HttpRequest) -> HttpResponse)
 }
 
-fun TcpServerConfiguration<out HttpProtocol>.url(baseUrl: String, mapping: () -> (HttpRequest) -> HttpResponse) {
-    protocol.registerUrl(baseUrl, mapping())
+fun TcpServerConfiguration<out HttpProtocol>.url(baseUrl: String, configuration: HttpConfig.() -> Unit) {
+    val config = HttpConfig().apply(configuration)
+    protocol.registerUrl(baseUrl, config.handler)
 }
