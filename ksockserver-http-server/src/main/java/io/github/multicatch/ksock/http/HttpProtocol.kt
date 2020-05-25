@@ -17,4 +17,14 @@ fun TcpServerConfiguration<out HttpProtocol>.url(baseUrl: String, configuration:
 
         alias(alias, target)
     }
+
+    protocol.urls.sortByDescending { (url, _) ->
+        url.let {
+            if (!it.endsWith("/")){
+                "$it/"
+            } else {
+                it
+            }
+        }.count { it == '/' }
+    }
 }

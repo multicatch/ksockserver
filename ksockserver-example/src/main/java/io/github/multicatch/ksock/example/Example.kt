@@ -11,19 +11,18 @@ import io.github.multicatch.ksock.tcp.bindTcp
 
 fun main() {
     bindTcp(port = 8080, protocol = Http11()) {
+        url("/") {
+            staticIndex("classpath:/")
+        }
         url("/example") {
             staticPage("classpath:/index.html")
         }
         url("/php") {
             php("./ksockserver-example/src/main/resources")
-
             alias("/", "/index.php")
         }
         url("/proxy") {
             proxy("http://httpbin.org/")
-        }
-        url("/") {
-            staticIndex("classpath:/")
         }
 
         alias("/", "/index.html")
