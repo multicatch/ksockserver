@@ -7,6 +7,7 @@ import java.io.BufferedReader
 import java.io.InputStream
 
 private const val ENTITY_SIZE_HEADER = "content-length"
+private const val ENTITY_TYPE_HEADER = "content-type"
 
 fun InputStream.readRequest(remoteAddress: String) = with(bufferedReader()) {
     val firstLine = readLine().split(" ")
@@ -23,6 +24,7 @@ fun InputStream.readRequest(remoteAddress: String) = with(bufferedReader()) {
 
     val headers = extractHeaders()
     val contentLength = headers.getOrDefault(ENTITY_SIZE_HEADER, "0").toLong()
+    val contentType = headers.getOrDefault(ENTITY_TYPE_HEADER, "text/plain")
 
     HttpRequest(
             method = method,
@@ -30,16 +32,22 @@ fun InputStream.readRequest(remoteAddress: String) = with(bufferedReader()) {
             queryParams = queryParams,
             httpVersion = httpVersion,
             headers = headers,
-            entity = extractEntity(contentLength),
+            entity = extractEntity(contentLength, contentType),
             remoteAddress = remoteAddress
     )
 }
 
 fun BufferedReader.extractHeaders() = lineSequence().extractHeaders()
 
-fun BufferedReader.extractEntity(contentLength: Long) = mutableListOf<Byte>()
+fun BufferedReader.extractEntity(contentLength: Long, contentType: String) = mutableListOf<Byte>()
         .also { byteList ->
-            for (i in 1..contentLength) {
+            val size = if (contentType == "utf-8") {
+                contentLength - 2
+            } else {
+                contentLength
+            }
+
+            for (i in 1..size) {
                 byteList.add(read().toByte())
             }
         }.toByteArray()

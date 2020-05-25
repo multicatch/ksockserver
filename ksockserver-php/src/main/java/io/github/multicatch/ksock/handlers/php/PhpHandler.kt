@@ -51,7 +51,7 @@ fun HttpConfig.php(scriptRoot: String, cgi: String = "php-cgi") = apply {
                 ?.first()
                 ?.toInt()
                 ?.toHttpStatus()
-                ?: HttpStatus.OK
+                ?: StandardHttpStatus.OK
 
         val responseEntity = lines.drop(lines.indexOfFirst { it.isBlank() })
                 .joinToString("\n")

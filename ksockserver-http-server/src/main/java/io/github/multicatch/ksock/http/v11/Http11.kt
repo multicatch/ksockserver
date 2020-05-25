@@ -3,7 +3,7 @@ package io.github.multicatch.ksock.http.v11
 import io.github.multicatch.ksock.http.HttpProtocol
 import io.github.multicatch.ksock.http.HttpRequest
 import io.github.multicatch.ksock.http.HttpResponse
-import io.github.multicatch.ksock.http.HttpStatus
+import io.github.multicatch.ksock.http.StandardHttpStatus
 import java.net.Socket
 
 class Http11 : HttpProtocol {
@@ -33,7 +33,7 @@ class Http11 : HttpProtocol {
 }
 
 private val DEFAULT_RESPONSE = HttpResponse(
-        status = HttpStatus.NOT_FOUND,
+        status = StandardHttpStatus.NOT_FOUND,
         headers = mapOf(
                 "Content-Type" to "text/plain"
         ),
