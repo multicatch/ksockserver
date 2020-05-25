@@ -1,5 +1,6 @@
 package io.github.multicatch.ksock.example
 
+import io.github.multicatch.ksock.handlers.http.proxy.proxy
 import io.github.multicatch.ksock.handlers.php.php
 import io.github.multicatch.ksock.handlers.staticIndex
 import io.github.multicatch.ksock.handlers.staticPage
@@ -17,6 +18,9 @@ fun main() {
             php("./ksockserver-example/src/main/resources")
 
             alias("/", "/index.php")
+        }
+        url("/proxy") {
+            proxy("http://httpbin.org/")
         }
         url("/") {
             staticIndex("classpath:/")
