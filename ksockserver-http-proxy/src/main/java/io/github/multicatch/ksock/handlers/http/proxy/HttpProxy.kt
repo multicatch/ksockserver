@@ -20,11 +20,20 @@ fun HttpConfig.proxy(targetAddress: String) = apply {
             val writer = it.getOutputStream().bufferedWriter()
 
             val resource = actualRequest.resourcePath
-                    .takeIf { it.isNotBlank() }
+                    .takeIf { resource -> resource.isNotBlank() }
                     ?: "/"
 
+            val queryParams = actualRequest.queryParams
+                    .toList()
+                    .joinToString("&") { (key, value) ->
+                        "$key=$value"
+                    }
+                    .takeIf { params -> params.isNotBlank() }
+                    ?.let { params -> "?$params" }
+                    ?: ""
+
             writer.write(
-                    """${actualRequest.method.name} $resource HTTP/1.1
+                    """${actualRequest.method.name} $resource$queryParams HTTP/1.1
                         |${actualRequest.headers.entries.joinToString("\n") { "${it.key}: ${it.value}" }}
                         |
                         |${actualRequest.entity}
