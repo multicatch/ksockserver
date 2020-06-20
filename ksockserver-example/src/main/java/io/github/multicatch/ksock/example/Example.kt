@@ -16,21 +16,21 @@ fun main() {
         withHttp11()
         withResponseWriter(GZipResponseWriter())
 
-        url("/") {
+        url(index("/")) {
             staticIndex("classpath:/")
         }
-        url("/example") {
+        url(exact("/example")) {
             staticPage("classpath:/index.html")
         }
-        url("/php") {
+        url(index("/php")) {
             php("./ksockserver-example/src/main/resources")
-            alias("/", "/index.php")
+            alias(exact("/"), "/index.php")
         }
-        url("/proxy") {
+        url(exact("/proxy")) {
             proxy("https://httpbin.org/")
         }
 
-        alias("/", "/index.html")
+        alias(exact("/") to "/index.html")
     }.start()
 
     bindSecureTCP(
@@ -40,14 +40,14 @@ fun main() {
     ) {
         withHttp11()
 
-        url("/") {
+        url(index("/")) {
             staticIndex("classpath:/")
         }
 
-        url("/proxy") {
+        url(exact("/proxy")) {
             proxy("https://httpbin.org/")
         }
 
-        alias("/", "/index.html")
+        alias(exact("/") to "/index.html")
     }.start()
 }

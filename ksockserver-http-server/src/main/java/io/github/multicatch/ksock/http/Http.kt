@@ -9,7 +9,7 @@ import io.github.multicatch.ksock.http.v11.response.DefaultResponseWriter
 import java.net.Socket
 
 object Http : HttpProtocol {
-    override val urls: MutableList<Pair<String, (HttpRequest) -> HttpResponse>> = mutableListOf()
+    override val urls: MutableList<Pair<UrlPattern, (HttpRequest) -> HttpResponse>> = mutableListOf()
     override val entityReaders: MutableList<EntityReader> = mutableListOf()
     override val headerReaders: MutableList<HeaderReader> = mutableListOf()
     override val responseWriters: MutableList<ResponseWriter> = mutableListOf()
@@ -19,10 +19,10 @@ object Http : HttpProtocol {
                 .readRequest(connection.inetAddress.hostAddress, headerReaders.toList(), entityReaders.toList())
         println(request)
 
-        val (baseUrl, handler) = request.resourceUri.handler()
+        val (urlPattern, handler) = request.resourceUri.handler()
         val requestWithContext = request.copy(
-                contextPath = baseUrl,
-                resourcePath = request.resourceUri.drop(baseUrl.length)
+                contextPath = urlPattern.basePath,
+                resourcePath = urlPattern.trimBasePath(request.resourceUri)
         )
 
         val response = handler(requestWithContext)
@@ -40,10 +40,10 @@ object Http : HttpProtocol {
     }
 
     private fun String.handler() = urls.toList()
-            .find { (baseUrl, _) ->
-                this.startsWith(baseUrl) || "$this/".startsWith(baseUrl)
+            .find { (url, _) ->
+                url.matches(this)
             }
-            ?: this to { _ -> DEFAULT_RESPONSE }
+            ?: exact(this) to { _ -> DEFAULT_RESPONSE }
 }
 
 private val DEFAULT_RESPONSE = PlaintextHttpResponse(

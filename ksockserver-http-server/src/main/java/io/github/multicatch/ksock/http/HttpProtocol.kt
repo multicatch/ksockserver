@@ -7,31 +7,24 @@ import io.github.multicatch.ksock.tcp.TcpServerConfiguration
 import io.github.multicatch.ksock.tcp.TcpProtocolProcessor
 
 interface HttpProtocol : TcpProtocolProcessor {
-    val urls: MutableList<Pair<String, (HttpRequest) -> HttpResponse>>
+    val urls: MutableList<Pair<UrlPattern, (HttpRequest) -> HttpResponse>>
     val headerReaders: MutableList<HeaderReader>
     val entityReaders: MutableList<EntityReader>
     val responseWriters: MutableList<ResponseWriter>
 }
 
-fun TcpServerConfiguration<out HttpProtocol>.url(baseUrl: String, configuration: HttpConfig.() -> Unit) {
+fun TcpServerConfiguration<out HttpProtocol>.url(url: UrlPattern, configuration: HttpConfig.() -> Unit) {
     val config = HttpConfig().apply(configuration)
-    protocol.urls.add(baseUrl to config.handler)
+    protocol.urls.add(url to config.handler)
 
     config.aliasRules.forEach { (aliasUrl, targetUrl) ->
-        val target = "$baseUrl/${targetUrl.trimStart('/')}"
-        val alias = "$baseUrl/${aliasUrl.trimStart('/')}"
+        val target = "${url.basePath}/${targetUrl.trimStart('/')}"
 
-        alias(alias, target)
+        alias(RelativeUrl(url, aliasUrl) to target)
     }
 
     protocol.urls.sortByDescending { (url, _) ->
-        url.let {
-            if (!it.endsWith("/")) {
-                "$it/"
-            } else {
-                it
-            }
-        }.count { it == '/' }
+        url.specificity
     }
 }
 
