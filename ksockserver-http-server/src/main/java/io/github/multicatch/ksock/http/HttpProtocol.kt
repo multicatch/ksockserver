@@ -8,7 +8,7 @@ import io.github.multicatch.ksock.tcp.TcpServerConfiguration
 import io.github.multicatch.ksock.tcp.TcpProtocolProcessor
 import kotlin.reflect.KClass
 
-interface HttpProtocol : TcpProtocolProcessor {
+interface HttpProtocol : TcpProtocolProcessor<HttpRequest, ByteArray> {
     val urls: MutableList<Pair<UrlPattern, (HttpRequest) -> HttpResponse>>
     val headerReaders: MutableList<HeaderReader>
     val entityReaders: MutableList<EntityReader>
@@ -16,7 +16,7 @@ interface HttpProtocol : TcpProtocolProcessor {
     val exceptionMappers: MutableMap<KClass<out Throwable>, ExceptionMapper<out Throwable>>
 }
 
-fun TcpServerConfiguration<out HttpProtocol>.url(url: UrlPattern, configuration: HttpConfig.() -> Unit) {
+fun TcpServerConfiguration<HttpRequest, ByteArray, out HttpProtocol>.url(url: UrlPattern, configuration: HttpConfig.() -> Unit) {
     val config = HttpConfig().apply(configuration)
     protocol.urls.add(url to config.handler)
 
@@ -31,6 +31,6 @@ fun TcpServerConfiguration<out HttpProtocol>.url(url: UrlPattern, configuration:
     }
 }
 
-fun TcpServerConfiguration<out HttpProtocol>.withResponseWriter(responseWriter: ResponseWriter) {
+fun TcpServerConfiguration<HttpRequest, ByteArray, out HttpProtocol>.withResponseWriter(responseWriter: ResponseWriter) {
     protocol.responseWriters.add(0, responseWriter)
 }

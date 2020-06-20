@@ -9,6 +9,8 @@ class DefaultResponseWriter : ResponseWriter {
     override fun write(request: HttpRequest, response: HttpResponse): ByteArray? =
             """HTTP/1.1 ${response.status.code} ${response.status.description}${'\r'}
 Server: ksockserver${'\r'}
+Connection: close${'\r'}
 ${response.headers.toStringHeaders()}${'\r'}
-${'\r'}""".toByteArray() + response.entity
+${'\r'}
+""".toByteArray() + response.entity
 }

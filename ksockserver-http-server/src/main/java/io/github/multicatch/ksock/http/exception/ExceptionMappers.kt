@@ -6,13 +6,13 @@ import io.github.multicatch.ksock.tcp.TcpServerConfiguration
 import kotlin.reflect.KClass
 import kotlin.reflect.full.allSuperclasses
 
-inline fun <reified T: Throwable> TcpServerConfiguration<out HttpProtocol>.withExceptionMapper(exceptionMapper: ExceptionMapper<T>) {
+inline fun <reified T: Throwable> TcpServerConfiguration<HttpRequest, ByteArray, out HttpProtocol>.withExceptionMapper(exceptionMapper: ExceptionMapper<T>) {
     protocol.exceptionMappers[T::class] = exceptionMapper
 }
 
 fun <T: Throwable> exceptionMapperOf(
         type: KClass<T>,
-        exceptionMappers: MutableMap<KClass<out Throwable>, ExceptionMapper<out Throwable>>
+        exceptionMappers: Map<KClass<out Throwable>, ExceptionMapper<out Throwable>>
 ): ExceptionMapper<out Throwable>? {
     if (type == Throwable::class) {
         return null

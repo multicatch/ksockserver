@@ -3,26 +3,24 @@ package io.github.multicatch.ksock.tcp
 import io.github.multicatch.ksock.RequestDispatcher
 import java.util.concurrent.Executors
 
-fun <T : TcpProtocolProcessor> bindTCP(
+fun <I, O, T : TcpProtocolProcessor<I, O>> bindTCP(
         port: Int,
         protocol: T,
-        maxThreads: Int = 10,
-        configuration: TcpServerConfiguration<T>.() -> Unit
+        configuration: TcpServerConfiguration<I, O, T>.() -> Unit
 ): RequestDispatcher {
     val serverConfiguration = TcpServerConfiguration(
             port = port,
             protocol = protocol
     ).apply(configuration)
 
-    return TcpRequestDispatcher(serverConfiguration, Executors.newFixedThreadPool(maxThreads))
+    return TcpRequestDispatcher(serverConfiguration)
 }
 
-fun <T : TcpProtocolProcessor> bindSecureTCP(
+fun <I, O, T : TcpProtocolProcessor<I, O>> bindSecureTCP(
         port: Int,
         protocol: T,
-        maxThreads: Int = 10,
         serverCertificate: CertificateWithKey,
-        configuration: TcpServerConfiguration<T>.() -> Unit
+        configuration: TcpServerConfiguration<I, O, T>.() -> Unit
 ): RequestDispatcher {
     val serverConfiguration = TcpServerConfiguration(
             port = port,
@@ -31,12 +29,11 @@ fun <T : TcpProtocolProcessor> bindSecureTCP(
 
     return SecureTcpRequestDispatcher(
             serverCertificate,
-            serverConfiguration,
-            Executors.newFixedThreadPool(maxThreads)
+            serverConfiguration
     )
 }
 
-class TcpServerConfiguration<T : TcpProtocolProcessor>(
+class TcpServerConfiguration<I, O, T : TcpProtocolProcessor<I, O>>(
         val port: Int = 0,
         val protocol: T
 )

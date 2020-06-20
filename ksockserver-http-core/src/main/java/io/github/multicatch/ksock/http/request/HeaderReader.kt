@@ -1,9 +1,7 @@
 package io.github.multicatch.ksock.http.request
 
-import java.io.BufferedReader
-
 interface HeaderReader {
-    fun read(httpInfo: HttpInfo, bufferedReader: BufferedReader): Map<String, String>?
+    fun readSingle(httpInfo: HttpInfo, line: String): Pair<String, String>?
 }
 
 data class HttpInfo(

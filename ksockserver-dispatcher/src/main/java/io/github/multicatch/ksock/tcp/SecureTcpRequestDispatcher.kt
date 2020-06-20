@@ -1,20 +1,25 @@
 package io.github.multicatch.ksock.tcp
 
 import io.github.multicatch.ksock.RequestDispatcher
+import io.github.multicatch.ksock.task.Task
 import java.net.Socket
 import java.security.KeyStore
 import java.security.PrivateKey
 import java.security.cert.Certificate
 import java.util.*
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.LinkedBlockingDeque
 import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 
 
-class SecureTcpRequestDispatcher<T : TcpProtocolProcessor>(
+class SecureTcpRequestDispatcher<I, O, T : TcpProtocolProcessor<I, O>>(
         private val certificate: CertificateWithKey,
-        private val server: TcpServerConfiguration<T>,
-        private val executor: ExecutorService
+        private val server: TcpServerConfiguration<I, O, T>,
+        private val taskTimeout: Long = 100,
+        private val executor: ExecutorService = Executors.newFixedThreadPool(10),
+        private val taskDeque: LinkedBlockingDeque<Task> = LinkedBlockingDeque()
 ) : RequestDispatcher {
 
     private fun keyStoreOf(certificate: Certificate, privateKey: PrivateKey, password: String) = KeyStore
@@ -49,10 +54,14 @@ class SecureTcpRequestDispatcher<T : TcpProtocolProcessor>(
                         }
                     }
         }
+        executor.handleQueue(taskDeque, taskTimeout)
     }
 
     private fun dispatch(acceptedSocket: Socket) {
-        executor.execute(dispatcherOf(acceptedSocket, server.protocol))
+        createTasks(acceptedSocket, server.protocol)
+                .forEach {
+                    taskDeque.offer(it)
+                }
     }
 
     override fun stop() {

@@ -3,32 +3,14 @@ package io.github.multicatch.ksock.http
 import io.github.multicatch.ksock.http.request.EntityReader
 import io.github.multicatch.ksock.http.request.HeaderReader
 import io.github.multicatch.ksock.http.request.HttpInfo
-import jdk.internal.util.xml.impl.Input
 import java.io.BufferedReader
-import java.io.InputStream
-import java.nio.charset.Charset
 
 const val ENTITY_SIZE_HEADER = "content-length"
 const val ENTITY_TYPE_HEADER = "content-type"
 
-fun InputStream.readRequest(remoteAddress: String, headerReaders: List<HeaderReader>, entityReaders: List<EntityReader>): HttpRequest = with(bufferedReader()) {
-    val httpInfo = httpInfo(remoteAddress)
-
+fun requestOf(httpInfo: HttpInfo, headers: Map<String, String>, rawEntity: ByteArray, entity: String?): HttpRequest {
     val resourceWithoutParams = httpInfo.resource.substringBeforeLast("?")
-
-    val headers = headerReaders.fold(null as Map<String, String>?) { result, reader ->
-        result ?: reader.read(httpInfo, this)
-    } ?: error("Unable to read request headers")
-
-    val contentLength = headers.getOrDefault(ENTITY_SIZE_HEADER, "0").toLong()
-    val contentType = headers.getOrDefault(ENTITY_TYPE_HEADER, "text/plain")
-
-    val rawEntity = extractEntity(contentLength, contentType)
-    val entity = entityReaders.fold(null as String?) { result, reader ->
-        result ?: reader.read(headers, rawEntity)
-    }
-
-    HttpRequest(
+    return HttpRequest(
             rawMethod = httpInfo.method,
             resourceUri = resourceWithoutParams,
             queryParams = httpInfo.queryParams(),
@@ -36,8 +18,17 @@ fun InputStream.readRequest(remoteAddress: String, headerReaders: List<HeaderRea
             headers = headers,
             rawEntity = rawEntity,
             entity = entity,
-            remoteAddress = remoteAddress
+            remoteAddress = httpInfo.remoteAddress
     )
+}
+
+fun BufferedReader.readSingleHeader(httpInfo: HttpInfo, headerReaders: List<HeaderReader>): Pair<String, String>? {
+    if (!this.ready()) return null
+    val line = readLine()
+
+    return headerReaders.fold(null as Pair<String, String>?) { result, reader ->
+        result ?: reader.readSingle(httpInfo, line)
+    }
 }
 
 fun BufferedReader.httpInfo(remoteAddress: String): HttpInfo {
@@ -60,15 +51,18 @@ fun HttpInfo.queryParams() = resource
         .flatMap { it.split("=").zipWithNext() }
         .toMap()
 
-fun InputStream.extractEntity(contentLength: Long, contentType: String) = mutableListOf<Byte>()
-        .also { byteList ->
-            val size = if (contentType == "utf-8") {
-                contentLength - 2
-            } else {
-                contentLength
-            }
+fun BufferedReader.readNextEntityByte(currentEntity: ByteArray, contentLength: Int) =
+        mutableListOf<Char>()
+                .also { charList ->
+                    if (currentEntity.size < contentLength) {
+                        charList.add(read().toChar())
+                    }
+                }
+                .toString()
+                .toByteArray()
+                .let { currentEntity + it }
 
-            for (i in 1..size) {
-                byteList.add(read().toByte())
-            }
-        }.toByteArray()
+fun ByteArray.convertEntity(entityReaders: List<EntityReader>, headers: Map<String, String>) =
+        entityReaders.fold(null as String?) { result, reader ->
+            result ?: reader.read(headers, this)
+        }

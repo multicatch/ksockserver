@@ -23,6 +23,7 @@ class GZipResponseWriter : ResponseWriter {
 
         return """HTTP/1.1 ${response.status.code} ${response.status.description}${'\r'}
 Server: ksockserver${'\r'}
+Connection: close${'\r'}
 Content-Encoding: gzip${'\r'}
 Content-Length: ${compressedResponse.size}${'\r'}
 ${headersWithoutLength.toStringHeaders()}${'\r'}

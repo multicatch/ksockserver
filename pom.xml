@@ -15,7 +15,6 @@
         <module>ksockserver-static-pages</module>
         <module>ksockserver-dispatcher</module>
         <module>ksockserver-example</module>
-        <module>ksockserver-php</module>
         <module>ksockserver-http-proxy</module>
         <module>ksockserver-http-gzip</module>
     </modules>

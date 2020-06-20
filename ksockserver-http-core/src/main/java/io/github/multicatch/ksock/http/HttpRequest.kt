@@ -60,9 +60,13 @@ enum class HttpMethod {
 fun Sequence<String>.extractHeaders() = takeWhile { line ->
             line.isNotEmpty()
         }
-        .map { header ->
-            with(header.indexOf(":")) {
-                header.substring(0, this).toLowerCase() to header.substring(this + 1).trim()
-            }
+        .map { line ->
+            line.asHeader()
         }
         .toMap()
+
+fun String.asHeader() = let { header ->
+    with(header.indexOf(":")) {
+        header.substring(0, this).toLowerCase() to header.substring(this + 1).trim()
+    }
+}

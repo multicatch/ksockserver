@@ -12,7 +12,7 @@ data class PlaintextHttpResponse(
         get() = originalHeaders
                 .toMutableMap()
                 .also { headers ->
-                    headers["content-length"] = "${textEntity.length}"
+                    headers["content-length"] = "${entity.size}"
                 }
 }
 
