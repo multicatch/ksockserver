@@ -20,7 +20,7 @@ enum class HttpMethod {
 }
 
 fun Sequence<String>.extractHeaders() = takeWhile { line ->
-            line.isNotBlank()
+            line.isNotEmpty()
         }
         .map { header ->
             with(header.indexOf(":")) {

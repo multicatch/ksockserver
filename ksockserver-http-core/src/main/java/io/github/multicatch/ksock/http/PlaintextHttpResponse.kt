@@ -1,11 +1,25 @@
 package io.github.multicatch.ksock.http
 
-data class HttpResponse(
-        val status: HttpStatus,
-        val headers: Map<String, String>,
-        val entity: String
-) {
-    fun entityLength() = entity.length + entity.count { it == '\n' } * 2
+data class PlaintextHttpResponse(
+        override val status: HttpStatus,
+        val originalHeaders: Map<String, String>,
+        val stringEntity: String
+) : HttpResponse {
+    override val entity: ByteArray
+        get() = stringEntity.replace("\n", "\r\n").toByteArray()
+
+    override val headers: Map<String, String>
+        get() = originalHeaders
+                .toMutableMap()
+                .also { headers ->
+                    headers["content-length"] = "${stringEntity.length}"
+                }
+}
+
+interface HttpResponse {
+    val status: HttpStatus
+    val headers: Map<String, String>
+    val entity: ByteArray
 }
 
 interface HttpStatus {

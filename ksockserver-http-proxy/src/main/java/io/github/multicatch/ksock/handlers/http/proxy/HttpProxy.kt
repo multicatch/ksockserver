@@ -4,6 +4,9 @@ import io.github.multicatch.ksock.http.*
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.net.Socket
+import javax.net.ssl.SSLSocket
+import javax.net.ssl.SSLSocketFactory
+
 
 fun HttpConfig.proxy(targetAddress: String) = apply {
     this.handler = { request ->
@@ -14,10 +17,7 @@ fun HttpConfig.proxy(targetAddress: String) = apply {
         val host = Regex("https?://([^/]*)").find(targetAddress)?.groupValues?.last()
                 ?: targetAddress.substringBefore("/")
 
-        val hostAddress = host.substringBefore(":")
-        val port = host.substringAfter(":", "80").toInt()
-
-        Socket(hostAddress, port).use {
+        socketOf(host).use {
             val reader = it.getInputStream().bufferedReader()
             val writer = it.getOutputStream().bufferedWriter()
             writer.writeRequest(actualRequest)
@@ -26,14 +26,27 @@ fun HttpConfig.proxy(targetAddress: String) = apply {
             val headers = reader.lineSequence().extractHeaders()
             val entity = reader.readEntity(headers)
 
-            HttpResponse(
+            ProxiedHttpResponse(
                     status = status,
-                    headers = headers.filterNot { (key, _) ->
-                        key.equals("server", ignoreCase = true) || key.equals("content-length", ignoreCase = true)
-                    },
-                    entity = entity.replace("\r\n", "\n")
+                    originalHeaders = headers,
+                    entity = entity
             )
         }
+    }
+}
+
+fun socketOf(host: String): Socket {
+    val hostAddress = host.substringBefore(":")
+    val port = host.substringAfter(":", "80").toInt()
+
+    return if (host.contains("https")) {
+        (SSLSocketFactory.getDefault()
+                .createSocket(host, port) as SSLSocket)
+                .apply {
+                    startHandshake()
+                }
+    } else {
+        Socket(hostAddress, port)
     }
 }
 
@@ -64,7 +77,11 @@ fun BufferedWriter.writeRequest(request: HttpRequest) = also { writer ->
 
 fun BufferedReader.readEntity(headers: Map<String, String>) =
         mutableListOf<Byte>().also { byteList ->
-            val contentLength = headers["content-length"]?.toInt() ?: 0
+            val contentLength = if (headers["content-encoding"]?.contains("gzip") == true) {
+                Int.MAX_VALUE
+            } else {
+                headers["content-length"]?.toInt() ?: 0
+            }
 
             val size = if (headers["content-type"]?.contains("utf-8") == true) {
                 contentLength - 2
@@ -79,6 +96,4 @@ fun BufferedReader.readEntity(headers: Map<String, String>) =
                 }
                 byteList += byte.toByte()
             }
-        }.let { byteList ->
-            String(byteList.toByteArray())
-        }
+        }.toByteArray()

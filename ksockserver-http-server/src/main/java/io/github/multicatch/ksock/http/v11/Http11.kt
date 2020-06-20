@@ -1,9 +1,6 @@
 package io.github.multicatch.ksock.http.v11
 
-import io.github.multicatch.ksock.http.HttpProtocol
-import io.github.multicatch.ksock.http.HttpRequest
-import io.github.multicatch.ksock.http.HttpResponse
-import io.github.multicatch.ksock.http.StandardHttpStatus
+import io.github.multicatch.ksock.http.*
 import java.net.Socket
 
 class Http11 : HttpProtocol {
@@ -32,10 +29,10 @@ class Http11 : HttpProtocol {
             ?: this to { _ -> DEFAULT_RESPONSE }
 }
 
-private val DEFAULT_RESPONSE = HttpResponse(
+private val DEFAULT_RESPONSE = PlaintextHttpResponse(
         status = StandardHttpStatus.NOT_FOUND,
-        headers = mapOf(
+        originalHeaders = mapOf(
                 "Content-Type" to "text/plain"
         ),
-        entity = ""
+        stringEntity = ""
 )

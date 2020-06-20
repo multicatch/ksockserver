@@ -56,10 +56,10 @@ fun HttpConfig.php(scriptRoot: String, cgi: String = "php-cgi") = apply {
         val responseEntity = lines.drop(lines.indexOfFirst { it.isBlank() })
                 .joinToString("\n")
 
-        HttpResponse(
+        PlaintextHttpResponse(
                 status = status,
-                headers = headers,
-                entity = responseEntity
+                originalHeaders = headers,
+                stringEntity = responseEntity
         )
     }
 }

@@ -7,10 +7,12 @@ import io.github.multicatch.ksock.handlers.staticPage
 import io.github.multicatch.ksock.http.alias
 import io.github.multicatch.ksock.http.url
 import io.github.multicatch.ksock.http.v11.Http11
-import io.github.multicatch.ksock.tcp.bindTcp
+import io.github.multicatch.ksock.tcp.bindSecureTCP
+import io.github.multicatch.ksock.tcp.bindTCP
+import io.github.multicatch.ksock.tcp.selfSignedCertificate
 
 fun main() {
-    bindTcp(port = 8080, protocol = Http11()) {
+    bindTCP(port = 8080, protocol = Http11()) {
         url("/") {
             staticIndex("classpath:/")
         }
@@ -22,7 +24,23 @@ fun main() {
             alias("/", "/index.php")
         }
         url("/proxy") {
-            proxy("http://httpbin.org/")
+            proxy("https://httpbin.org/")
+        }
+
+        alias("/", "/index.html")
+    }.start()
+
+    bindSecureTCP(
+            port = 8443,
+            protocol = Http11(),
+            serverCertificate = selfSignedCertificate()
+    ) {
+        url("/") {
+            staticIndex("classpath:/")
+        }
+
+        url("/proxy") {
+            proxy("https://httpbin.org/")
         }
 
         alias("/", "/index.html")

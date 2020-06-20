@@ -22,16 +22,16 @@ class TcpRequestDispatcher<T : TcpProtocolProcessor>(
     }
 
     private fun dispatch(acceptedSocket: Socket) {
-        executor.execute(dispatcherOf(acceptedSocket))
-    }
-
-    private fun dispatcherOf(acceptedSocket: Socket): () -> Unit = {
-        acceptedSocket.use {
-            server.protocol.process(connection = it)
-        }
+        executor.execute(dispatcherOf(acceptedSocket, server.protocol))
     }
 
     override fun stop() {
         executor.shutdownNow()
+    }
+}
+
+fun <T : TcpProtocolProcessor> dispatcherOf(acceptedSocket: Socket, protocol: T): () -> Unit = {
+    acceptedSocket.use {
+        protocol.process(connection = it)
     }
 }

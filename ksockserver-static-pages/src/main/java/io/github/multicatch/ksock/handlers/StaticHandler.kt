@@ -2,7 +2,7 @@ package io.github.multicatch.ksock.handlers
 
 import io.github.multicatch.ksock.http.HttpConfig
 import io.github.multicatch.ksock.http.exceptions.NotFoundException
-import io.github.multicatch.ksock.http.HttpResponse
+import io.github.multicatch.ksock.http.PlaintextHttpResponse
 import io.github.multicatch.ksock.http.StandardHttpStatus
 
 fun HttpConfig.staticPage(resourcePath: String) = apply {
@@ -12,12 +12,12 @@ fun HttpConfig.staticPage(resourcePath: String) = apply {
                 ?.readText()
                 ?: throw NotFoundException()
 
-        HttpResponse(
+        PlaintextHttpResponse(
                 status = StandardHttpStatus.OK,
-                headers = mapOf(
+                originalHeaders = mapOf(
                         "Content-Type" to "text/html"
                 ),
-                entity = responseEntity
+                stringEntity = responseEntity
         )
     }
 }
@@ -31,12 +31,12 @@ fun HttpConfig.staticIndex(path: String) = apply {
                 ?.readText()
                 ?: throw NotFoundException()
 
-        HttpResponse(
+        PlaintextHttpResponse(
                 status = StandardHttpStatus.OK,
-                headers = mapOf(
+                originalHeaders = mapOf(
                         "Content-Type" to "text/html"
                 ),
-                entity = responseEntity
+                stringEntity = responseEntity
         )
     }
 }
