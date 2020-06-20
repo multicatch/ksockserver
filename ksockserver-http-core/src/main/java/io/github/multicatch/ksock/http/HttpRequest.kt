@@ -54,7 +54,12 @@ enum class HttpMethod {
     GET,
     POST,
     PUT,
-    DELETE
+    DELETE,
+    OPTIONS,
+    TRACE,
+    PATCH,
+    CONNECT,
+    HEAD
 }
 
 fun Sequence<String>.extractHeaders() = takeWhile { line ->
