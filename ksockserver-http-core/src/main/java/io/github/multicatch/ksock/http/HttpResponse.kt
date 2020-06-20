@@ -3,16 +3,16 @@ package io.github.multicatch.ksock.http
 data class PlaintextHttpResponse(
         override val status: HttpStatus,
         val originalHeaders: Map<String, String>,
-        val stringEntity: String
+        val textEntity: String
 ) : HttpResponse {
     override val entity: ByteArray
-        get() = stringEntity.replace("\n", "\r\n").toByteArray()
+        get() = textEntity.replace("\n", "\r\n").toByteArray()
 
     override val headers: Map<String, String>
         get() = originalHeaders
                 .toMutableMap()
                 .also { headers ->
-                    headers["content-length"] = "${stringEntity.length}"
+                    headers["content-length"] = "${textEntity.length}"
                 }
 }
 

@@ -18,7 +18,7 @@ fun HttpConfig.staticPage(resourcePath: String) = apply {
                 originalHeaders = mapOf(
                         "Content-Type" to "text/html; charset=${Charset.defaultCharset().name()}"
                 ),
-                stringEntity = responseEntity
+                textEntity = responseEntity
         )
     }
 }
@@ -37,7 +37,7 @@ fun HttpConfig.staticIndex(path: String) = apply {
                 originalHeaders = mapOf(
                         "Content-Type" to "text/html; charset=${Charset.defaultCharset().name()}"
                 ),
-                stringEntity = responseEntity
+                textEntity = responseEntity
         )
     }
 }

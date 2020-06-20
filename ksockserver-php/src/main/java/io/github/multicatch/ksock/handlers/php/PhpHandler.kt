@@ -58,7 +58,7 @@ fun HttpConfig.php(scriptRoot: String, cgi: String = "php-cgi") = apply {
         PlaintextHttpResponse(
                 status = status,
                 originalHeaders = headers,
-                stringEntity = responseEntity
+                textEntity = responseEntity
         )
     }
 }
