@@ -2,6 +2,7 @@ package io.github.multicatch.ksock.tcp
 
 import io.github.multicatch.ksock.RequestDispatcher
 import io.github.multicatch.ksock.task.Task
+import org.apache.logging.log4j.LogManager
 import java.net.Socket
 import java.security.KeyStore
 import java.security.PrivateKey
@@ -39,32 +40,30 @@ class SecureTcpRequestDispatcher<I, O, T : TcpProtocolProcessor<I, O>>(
                     }
 
     override fun start() {
+        logger.debug("Starting the Secure TCP Request Dispatcher on port ${server.port}. Using protocol ${server.protocol::class.java.canonicalName}")
         executor.execute {
+            logger.info("Loading TLS config...")
             val password = UUID.randomUUID().toString()
             val keyStore = keyStoreOf(certificate.certificate, certificate.key, password)
             val keyManagerFactory = keyManagerFactoryOf(keyStore, password)
 
+            logger.info("Key Manager initialized, loading context.")
             val context = SSLContext.getInstance("TLS")
             context.init(keyManagerFactory.keyManagers, null, null)
+
+            logger.info("Starting SSLServerSocket.")
             context.serverSocketFactory
                     .createServerSocket(server.port)
-                    .use {
-                        while (true) {
-                            dispatch(it.accept())
-                        }
-                    }
+                    .listenForConnections(server.protocol, taskDeque)
         }
         executor.handleQueue(taskDeque, taskTimeout)
-    }
-
-    private fun dispatch(acceptedSocket: Socket) {
-        createTasks(acceptedSocket, server.protocol)
-                .forEach {
-                    taskDeque.offer(it)
-                }
+        logger.debug("Secure TCP Request Dispatcher of ${server.port} started.")
     }
 
     override fun stop() {
+        logger.info("Stopping the TCP Request Dispatcher of ${server.port}.")
         executor.shutdownNow()
     }
 }
+
+private val logger = LogManager.getLogger(SecureTcpRequestDispatcher::class.java)

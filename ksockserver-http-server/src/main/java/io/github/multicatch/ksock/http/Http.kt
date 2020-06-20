@@ -11,6 +11,7 @@ import io.github.multicatch.ksock.http.response.ResponseWriter
 import io.github.multicatch.ksock.tcp.MessageProcessor
 import io.github.multicatch.ksock.tcp.MessageReader
 import io.github.multicatch.ksock.tcp.MessageWriter
+import org.apache.logging.log4j.LogManager
 import java.io.BufferedOutputStream
 import java.io.BufferedReader
 import java.io.DataOutputStream
@@ -54,10 +55,12 @@ class HttpMessageReader(
     private var rawEntity: ByteArray = byteArrayOf()
 
     override fun read(): HttpRequest {
+        logger.info("Reading message from ${remoteAddress}")
+        logger.trace("Reading HTTP info of message from ${remoteAddress}")
         val info = httpInfo ?: bufferedReader.httpInfo(remoteAddress)
-
         httpInfo = info
 
+        logger.trace("Reading HTTP headers of message from ${remoteAddress}")
         while (!headersRead) {
             val header = bufferedReader.readSingleHeader(info, headerReaders)
             if (header != null) {
@@ -66,11 +69,14 @@ class HttpMessageReader(
                 headersRead = true
             }
         }
+
+        logger.trace("Reading entity of message from ${remoteAddress}")
         val contentLength = headers.getOrDefault(ENTITY_SIZE_HEADER, "0").toInt()
         while (rawEntity.size < contentLength) {
             rawEntity = bufferedReader.readNextEntityByte(rawEntity, contentLength)
         }
 
+        logger.trace("Converting entity of message from ${remoteAddress}")
         val entity = rawEntity.convertEntity(entityReaders, headers)
         val request = requestOf(info, headers, rawEntity, entity)
 
@@ -79,6 +85,7 @@ class HttpMessageReader(
         headersRead = false
         rawEntity = byteArrayOf()
 
+        logger.debug("Message processing from ${remoteAddress} done.")
         return request
     }
 }
@@ -89,6 +96,7 @@ class HttpMessageWriter(
     private var bytesToWrite: LinkedBlockingDeque<Byte> = LinkedBlockingDeque()
 
     override fun write(message: ByteArray) {
+        logger.info("Adding message of length ${message.size} to writing queue")
         bytesToWrite.addAll(message.toList())
         resume()
     }
@@ -99,6 +107,7 @@ class HttpMessageWriter(
                 write(bytesToWrite.takeFirst().toInt())
             }
             flush()
+            logger.debug("Messages sent.")
         }
     }
 }
@@ -115,7 +124,8 @@ class HttpMessageProcessor(
     private var currentRawResponse: ByteArray? = null
 
     override fun process(message: HttpRequest) {
-        println(message)
+        logger.info("Processing message from ${message.remoteAddress}: ${message.rawMethod} ${message.resourcePath} ${message.httpVersion}")
+        logger.debug(message)
         currentMessage = message
         resume()
     }
@@ -126,12 +136,16 @@ class HttpMessageProcessor(
         val response = currentResponse ?: try {
             message.toResponse()
         } catch (throwable: Throwable) {
+            logger.debug("Got an error while processing a request", throwable)
             @Suppress("UNCHECKED_CAST")
             (exceptionMapperOf(throwable::class, exceptionMappers) as ExceptionMapper<Throwable>?)
                     .mapOrReturnDefault(message, throwable)
         }
 
         currentResponse = response
+
+        logger.info("Response to ${message.remoteAddress}: ${response.status}")
+        logger.debug("Response to ${message.remoteAddress}: ${response}")
 
         val rawResponse = currentRawResponse ?: responseWriters
                 .toList()
@@ -141,6 +155,7 @@ class HttpMessageProcessor(
 
         currentRawResponse = rawResponse
 
+        logger.trace("Added response to the queue.")
         outgoingQueue.offer(rawResponse)
 
         currentMessage = null
@@ -173,3 +188,5 @@ class HttpMessageProcessor(
                 url.matches(this)
             }
 }
+
+private val logger = LogManager.getLogger(Http::class.java)

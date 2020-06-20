@@ -3,6 +3,7 @@ package io.github.multicatch.ksock.http.exception
 import io.github.multicatch.ksock.http.*
 import io.github.multicatch.ksock.http.exceptions.ExceptionMapper
 import io.github.multicatch.ksock.tcp.TcpServerConfiguration
+import org.apache.logging.log4j.LogManager
 import kotlin.reflect.KClass
 import kotlin.reflect.full.allSuperclasses
 
@@ -44,9 +45,12 @@ fun <T: Throwable> ExceptionMapper<T>?.mapOrReturnDefault(
             try {
                 it.map(request, throwable)
             } catch (throwable: Throwable) {
+                logger.error("Got an error while looking for an exception mapper", throwable)
                 defaultResponse
             }
-        } ?: defaultResponse
+        } ?: defaultResponse.also {
+            logger.error("Got an error while processing a request from ${request.remoteAddress}", throwable)
+        }
 
 val DEFAULT_RESPONSE = PlaintextHttpResponse(
         status = StandardHttpStatus.INTERNAL_SERVER_ERROR,
@@ -55,3 +59,5 @@ val DEFAULT_RESPONSE = PlaintextHttpResponse(
         ),
         textEntity = "Internal server error"
 )
+
+private val logger = LogManager.getLogger(ExceptionMapper::class.java)

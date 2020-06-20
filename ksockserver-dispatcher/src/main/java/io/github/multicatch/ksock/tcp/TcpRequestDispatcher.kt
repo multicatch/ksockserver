@@ -1,9 +1,11 @@
 package io.github.multicatch.ksock.tcp
 
+import com.sun.security.ntlm.Server
 import io.github.multicatch.ksock.RequestDispatcher
 import io.github.multicatch.ksock.task.ConnectedTask
 import io.github.multicatch.ksock.task.Task
 import io.github.multicatch.ksock.task.runWithTimeout
+import org.apache.logging.log4j.LogManager
 import java.net.ServerSocket
 import java.net.Socket
 import java.util.concurrent.*
@@ -16,26 +18,34 @@ class TcpRequestDispatcher<I, O, T : TcpProtocolProcessor<I, O>>(
 ) : RequestDispatcher {
 
     override fun start() {
+        logger.debug("Starting the TCP Request Dispatcher on port ${server.port}. Using protocol ${server.protocol::class.java.canonicalName}")
         executor.execute {
-            ServerSocket(server.port).use {
-                while (true) {
-                    dispatch(it.accept())
-                }
-            }
+            ServerSocket(server.port).listenForConnections(server.protocol, taskDeque)
         }
         executor.handleQueue(taskDeque, taskTimeout)
-    }
-
-    private fun dispatch(acceptedSocket: Socket) {
-        createTasks(acceptedSocket, server.protocol)
-                .forEach {
-                    taskDeque.offer(it)
-                }
+        logger.debug("TCP Request Dispatcher of ${server.port} started.")
     }
 
     override fun stop() {
+        logger.info("Stopping the TCP Request Dispatcher of ${server.port}.")
         executor.shutdownNow()
     }
+}
+
+fun <I, O, T : TcpProtocolProcessor<I, O>> ServerSocket.listenForConnections(protocol: T, taskDeque: LinkedBlockingDeque<Task>) = use {
+    logger.info("Server started on ${it.localPort}.")
+    while (true) {
+        logger.info("Got new connection from ${it.inetAddress.hostAddress}, using ${protocol::class.java.canonicalName}")
+        dispatch(it.accept(), protocol, taskDeque)
+    }
+}
+
+fun <I, O, T : TcpProtocolProcessor<I, O>> dispatch(acceptedSocket: Socket, protocol: T, taskDeque: LinkedBlockingDeque<Task>) {
+    createTasks(acceptedSocket, protocol)
+            .forEach {
+                logger.trace("Adding task ${it::class.java.canonicalName} of ${acceptedSocket.inetAddress.hostAddress}.")
+                taskDeque.offer(it)
+            }
 }
 
 fun ExecutorService.handleQueue(taskDeque: LinkedBlockingDeque<Task>, timeout: Long) {
@@ -58,6 +68,8 @@ fun ExecutorService.handleQueue(taskDeque: LinkedBlockingDeque<Task>, timeout: L
 }
 
 fun <I, O, T : TcpProtocolProcessor<I, O>> createTasks(acceptedSocket: Socket, protocol: T): List<Task> {
+    logger.debug("Received new connection from ${acceptedSocket.inetAddress.hostAddress}, preparing tasks...")
+
     val reader = protocol.reader(acceptedSocket)
     val writer = protocol.writer(acceptedSocket)
     val incomingQueue = LinkedBlockingDeque<I>()
@@ -65,12 +77,14 @@ fun <I, O, T : TcpProtocolProcessor<I, O>> createTasks(acceptedSocket: Socket, p
     val processor = protocol.processor(outgoingQueue, acceptedSocket)
     val semaphore = Semaphore(3)
 
-    return listOf(
+    val result = listOf(
             ReaderTask(acceptedSocket, incomingQueue, reader, semaphore),
             ProcessingTask(acceptedSocket, incomingQueue, processor, semaphore),
             WriterTask(acceptedSocket, outgoingQueue, writer, semaphore),
-            ConnectionCloseTask(acceptedSocket, incomingQueue, outgoingQueue, semaphore)
+            ConnectionCloseTask(acceptedSocket, semaphore)
     )
+    logger.debug("Tasks for ${acceptedSocket.inetAddress.hostAddress} prepared.")
+    return result
 }
 
 class ReaderTask<I>(
@@ -80,8 +94,10 @@ class ReaderTask<I>(
         override val semaphore: Semaphore
 ) : ConnectedTask {
     override fun runOnConnected(): Task? {
+        logger.trace("Reading from ${socket.inetAddress.hostAddress}")
         val message = reader.read()
         if (message != null) {
+            logger.trace("Adding a new message from ${socket.inetAddress.hostAddress} to incoming queue")
             incomingQueue.offer(message)
         }
         return null
@@ -100,8 +116,10 @@ class WriterTask<O>(
         override val semaphore: Semaphore
 ) : ConnectedTask {
     override fun runOnConnected(): Task? {
+        logger.trace("Writing to ${socket.inetAddress.hostAddress}")
         writer.resume()
         if (outgoingQueue.isNotEmpty()) {
+            logger.trace("Adding a new message ${socket.inetAddress.hostAddress} to outgoing queue")
             writer.write(outgoingQueue.pop())
         }
         return null
@@ -120,6 +138,7 @@ class ProcessingTask<I, O>(
         override val semaphore: Semaphore
 ) : ConnectedTask {
     override fun runOnConnected(): Task? {
+        logger.trace("Processing incoming queue of ${socket.inetAddress.hostAddress}")
         processor.resume()
         processor.process(incomingQueue.pop())
         return null
@@ -131,19 +150,22 @@ class ProcessingTask<I, O>(
     }
 }
 
-class ConnectionCloseTask<I, O>(
+class ConnectionCloseTask(
         private val socket: Socket,
-        private val incomingQueue: LinkedBlockingDeque<I>,
-        private val outgoingQueue: LinkedBlockingDeque<O>,
         private val semaphore: Semaphore
 ) : Task {
     override fun call(): Task? {
+        logger.trace("Testing ${socket.inetAddress.hostAddress} connection")
         if (semaphore.availablePermits() == 3) {
+            logger.debug("Closing connection with ${socket.inetAddress.hostAddress}")
             socket.getInputStream().close()
             socket.getOutputStream().close()
             socket.close()
+            logger.info("Closing with ${socket.inetAddress.hostAddress} closed.")
             return null
         }
         return this
     }
 }
+
+private val logger = LogManager.getLogger(TcpRequestDispatcher::class.java)

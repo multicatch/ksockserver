@@ -4,6 +4,7 @@ import io.github.multicatch.ksock.http.HttpRequest
 import io.github.multicatch.ksock.http.HttpResponse
 import io.github.multicatch.ksock.http.response.ResponseWriter
 import io.github.multicatch.ksock.http.response.toStringHeaders
+import org.apache.logging.log4j.LogManager
 import java.io.ByteArrayOutputStream
 import java.util.zip.GZIPOutputStream
 
@@ -16,10 +17,15 @@ class GZipResponseWriter : ResponseWriter {
             return null
         }
 
+        logger.debug("Client accepts gzip encoding, compressing entity...")
+        val oldSize = response.entity.size
         val headersWithoutLength = response.headers
                 .filterNot { (key, _ ) -> key.equals("content-length", true) }
 
         val compressedResponse = response.compress()
+        val contentLength = compressedResponse.size
+
+        logger.debug("GZIP response size comparison - before compression: ${oldSize}, after: ${contentLength}")
 
         return """HTTP/1.1 ${response.status.code} ${response.status.description}${'\r'}
 Server: ksockserver${'\r'}
@@ -39,3 +45,5 @@ ${'\r'}
                 it.toByteArray()
             }
 }
+
+private val logger = LogManager.getLogger(GZipResponseWriter::class.java)
