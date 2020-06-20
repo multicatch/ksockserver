@@ -4,6 +4,7 @@ import io.github.multicatch.ksock.http.HttpConfig
 import io.github.multicatch.ksock.http.exceptions.NotFoundException
 import io.github.multicatch.ksock.http.PlaintextHttpResponse
 import io.github.multicatch.ksock.http.StandardHttpStatus
+import java.nio.charset.Charset
 
 fun HttpConfig.staticPage(resourcePath: String) = apply {
     this.handler = {
@@ -15,7 +16,7 @@ fun HttpConfig.staticPage(resourcePath: String) = apply {
         PlaintextHttpResponse(
                 status = StandardHttpStatus.OK,
                 originalHeaders = mapOf(
-                        "Content-Type" to "text/html"
+                        "Content-Type" to "text/html; charset=${Charset.defaultCharset().name()}"
                 ),
                 stringEntity = responseEntity
         )
@@ -34,7 +35,7 @@ fun HttpConfig.staticIndex(path: String) = apply {
         PlaintextHttpResponse(
                 status = StandardHttpStatus.OK,
                 originalHeaders = mapOf(
-                        "Content-Type" to "text/html"
+                        "Content-Type" to "text/html; charset=${Charset.defaultCharset().name()}"
                 ),
                 stringEntity = responseEntity
         )

@@ -6,8 +6,8 @@ import io.github.multicatch.ksock.http.extractHeaders
 import java.io.BufferedReader
 import java.io.InputStream
 
-private const val ENTITY_SIZE_HEADER = "content-length"
-private const val ENTITY_TYPE_HEADER = "content-type"
+const val ENTITY_SIZE_HEADER = "content-length"
+const val ENTITY_TYPE_HEADER = "content-type"
 
 fun InputStream.readRequest(remoteAddress: String) = with(bufferedReader()) {
     val firstLine = readLine().split(" ")

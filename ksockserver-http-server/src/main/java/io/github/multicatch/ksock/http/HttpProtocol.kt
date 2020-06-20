@@ -1,10 +1,12 @@
 package io.github.multicatch.ksock.http
 
+import io.github.multicatch.ksock.http.response.ResponseWriter
 import io.github.multicatch.ksock.tcp.TcpServerConfiguration
 import io.github.multicatch.ksock.tcp.TcpProtocolProcessor
 
 interface HttpProtocol : TcpProtocolProcessor {
     val urls: MutableList<Pair<String, (HttpRequest) -> HttpResponse>>
+    val responseWriters: MutableList<ResponseWriter>
 }
 
 fun TcpServerConfiguration<out HttpProtocol>.url(baseUrl: String, configuration: HttpConfig.() -> Unit) {
@@ -20,11 +22,15 @@ fun TcpServerConfiguration<out HttpProtocol>.url(baseUrl: String, configuration:
 
     protocol.urls.sortByDescending { (url, _) ->
         url.let {
-            if (!it.endsWith("/")){
+            if (!it.endsWith("/")) {
                 "$it/"
             } else {
                 it
             }
         }.count { it == '/' }
     }
+}
+
+fun TcpServerConfiguration<out HttpProtocol>.responseWriter(responseWriter: ResponseWriter) {
+    protocol.responseWriters.add(0, responseWriter)
 }

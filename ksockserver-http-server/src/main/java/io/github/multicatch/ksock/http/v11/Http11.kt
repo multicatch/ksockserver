@@ -1,10 +1,15 @@
 package io.github.multicatch.ksock.http.v11
 
 import io.github.multicatch.ksock.http.*
+import io.github.multicatch.ksock.http.response.ResponseWriter
+import io.github.multicatch.ksock.http.v11.response.DefaultResponseWriter
 import java.net.Socket
 
 class Http11 : HttpProtocol {
     override val urls: MutableList<Pair<String, (HttpRequest) -> HttpResponse>> = mutableListOf()
+    override val responseWriters: MutableList<ResponseWriter> = mutableListOf(
+            DefaultResponseWriter()
+    )
 
     override fun process(connection: Socket) {
         val request = connection.getInputStream()
@@ -19,7 +24,17 @@ class Http11 : HttpProtocol {
 
         val response = handler(requestWithContext)
 
-        connection.getOutputStream().write(response)
+        val result = responseWriters
+                .fold(null as ByteArray?) { result, writer ->
+                    result ?: writer.write(request, response)
+                }
+
+        if (result != null) {
+            with(connection.getOutputStream()) {
+                write(result)
+                flush()
+            }
+        }
     }
 
     private fun String.handler() = urls.toList()
