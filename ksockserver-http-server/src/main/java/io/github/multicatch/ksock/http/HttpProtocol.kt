@@ -1,11 +1,15 @@
 package io.github.multicatch.ksock.http
 
+import io.github.multicatch.ksock.http.request.EntityReader
+import io.github.multicatch.ksock.http.request.HeaderReader
 import io.github.multicatch.ksock.http.response.ResponseWriter
 import io.github.multicatch.ksock.tcp.TcpServerConfiguration
 import io.github.multicatch.ksock.tcp.TcpProtocolProcessor
 
 interface HttpProtocol : TcpProtocolProcessor {
     val urls: MutableList<Pair<String, (HttpRequest) -> HttpResponse>>
+    val headerReaders: MutableList<HeaderReader>
+    val entityReaders: MutableList<EntityReader>
     val responseWriters: MutableList<ResponseWriter>
 }
 
@@ -31,6 +35,6 @@ fun TcpServerConfiguration<out HttpProtocol>.url(baseUrl: String, configuration:
     }
 }
 
-fun TcpServerConfiguration<out HttpProtocol>.responseWriter(responseWriter: ResponseWriter) {
+fun TcpServerConfiguration<out HttpProtocol>.withResponseWriter(responseWriter: ResponseWriter) {
     protocol.responseWriters.add(0, responseWriter)
 }

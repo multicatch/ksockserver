@@ -20,7 +20,7 @@ fun HttpConfig.php(scriptRoot: String, cgi: String = "php-cgi") = apply {
                         env["REMOTE_ADDR"] = request.remoteAddress
                         env["SERVER_SOFTWARE"] = "ksockserver"
                         env["QUERY_STRING"] = queryString
-                        env["CONTENT_LENGTH"] = "${request.entity.length}"
+                        env["CONTENT_LENGTH"] = "${request.rawEntity.size}"
                         for ((key, value) in request.headers) {
                             env["HTTP_${key.replace("-", "_").toUpperCase()}"] = value
                         }
@@ -30,12 +30,11 @@ fun HttpConfig.php(scriptRoot: String, cgi: String = "php-cgi") = apply {
                 .redirectOutput(ProcessBuilder.Redirect.PIPE)
                 .start()
 
-        val bufferedWriter = process.outputStream.bufferedWriter()
+        val outputStream = process.outputStream
         val bufferedReader = process.inputStream.bufferedReader()
 
-        bufferedWriter.apply {
-            write(request.entity)
-            newLine()
+        outputStream.apply {
+            write(request.rawEntity)
             flush()
         }
 

@@ -65,7 +65,7 @@ fun BufferedWriter.writeRequest(request: HttpRequest) = also { writer ->
             ?: ""
 
     writer.write(
-            """${request.method.name} $resource$queryParams HTTP/1.1
+            """${request.rawMethod} $resource$queryParams HTTP/1.1
                         |${request.headers.entries.joinToString("\n") { "${it.key}: ${it.value}" }}
                         |
                         |${request.entity}
