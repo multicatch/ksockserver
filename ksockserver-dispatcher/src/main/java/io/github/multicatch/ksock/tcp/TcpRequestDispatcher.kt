@@ -60,6 +60,7 @@ fun ExecutorService.handleQueue(taskDeque: LinkedBlockingDeque<Task>, timeout: L
                         taskDeque.offer(newTask)
                     }
                 } catch (throwable: Throwable) {
+                    logger.error("Got an error while processing task, retrying", throwable)
                     taskDeque.offer(task)
                 }
             }

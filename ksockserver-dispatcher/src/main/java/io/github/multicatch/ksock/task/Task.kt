@@ -22,7 +22,7 @@ interface ConnectedTask : Task {
             val result = try {
                 runOnConnected()
             } catch (throwable: Throwable) {
-                logger.error(throwable)
+                logger.error("Got an error while running a task on a socket, aborting", throwable)
                 null
             }
             if (result != null) {

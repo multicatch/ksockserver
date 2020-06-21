@@ -4,9 +4,7 @@ import io.github.multicatch.ksock.http.exception.exceptionMapperOf
 import io.github.multicatch.ksock.http.exception.mapOrReturnDefault
 import io.github.multicatch.ksock.http.exceptions.ExceptionMapper
 import io.github.multicatch.ksock.http.exceptions.NotFoundException
-import io.github.multicatch.ksock.http.request.EntityReader
-import io.github.multicatch.ksock.http.request.HeaderReader
-import io.github.multicatch.ksock.http.request.HttpInfo
+import io.github.multicatch.ksock.http.request.*
 import io.github.multicatch.ksock.http.response.ResponseWriter
 import io.github.multicatch.ksock.tcp.MessageProcessor
 import io.github.multicatch.ksock.tcp.MessageReader
@@ -23,7 +21,7 @@ import java.util.concurrent.Semaphore
 import kotlin.reflect.KClass
 
 object Http : HttpProtocol {
-    override val urls: MutableList<Pair<UrlPattern, (HttpRequest) -> HttpResponse>> = mutableListOf()
+    override val urls: MutableList<Pair<UrlPattern, RequestHandlerFactory>> = mutableListOf()
     override val entityReaders: MutableList<EntityReader> = mutableListOf()
     override val headerReaders: MutableList<HeaderReader> = mutableListOf()
     override val responseWriters: MutableList<ResponseWriter> = mutableListOf()
@@ -115,13 +113,14 @@ class HttpMessageWriter(
 class HttpMessageProcessor(
         private val outgoingQueue: LinkedBlockingDeque<ByteArray>,
         private val responseWriters: List<ResponseWriter>,
-        private val urls: List<Pair<UrlPattern, (HttpRequest) -> HttpResponse>>,
+        private val urls: List<Pair<UrlPattern, RequestHandlerFactory>>,
         private val exceptionMappers: Map<KClass<out Throwable>, ExceptionMapper<out Throwable>>
 ) : MessageProcessor<HttpRequest, ByteArray> {
 
     private var currentMessage: HttpRequest? = null
     private var currentResponse: HttpResponse? = null
     private var currentRawResponse: ByteArray? = null
+    private var currentHandler: RequestHandler? = null
 
     override fun process(message: HttpRequest) {
         logger.info("Processing message from ${message.remoteAddress}: ${message.rawMethod} ${message.resourcePath} ${message.httpVersion}")
@@ -136,7 +135,7 @@ class HttpMessageProcessor(
         val response = currentResponse ?: try {
             message.toResponse()
         } catch (throwable: Throwable) {
-            logger.debug("Got an error while processing a request", throwable)
+            logger.trace("Got an exception to be mapped", throwable)
             @Suppress("UNCHECKED_CAST")
             (exceptionMapperOf(throwable::class, exceptionMappers) as ExceptionMapper<Throwable>?)
                     .mapOrReturnDefault(message, throwable)
@@ -170,17 +169,29 @@ class HttpMessageProcessor(
         if (currentResponse == null && currentRawResponse != null) {
             currentRawResponse = null
         }
+        currentHandler?.interrupt()
     }
 
     private fun HttpRequest.toResponse(): HttpResponse {
-        val (urlPattern, handler) = resourceUri.handler()
+        val runningHandler = currentHandler
+        if (runningHandler != null) {
+            val result = runningHandler.resume()
+            currentHandler = null
+            return result
+        }
+
+        val (urlPattern, handlerFactory) = resourceUri.handler()
                 ?: throw NotFoundException()
+        val handler = handlerFactory.create()
+        currentHandler = handler
         val requestWithContext = this.copy(
                 contextPath = urlPattern.basePath,
                 resourcePath = urlPattern.trimBasePath(resourceUri)
         )
 
-        return handler(requestWithContext)
+        val result = handler.handle(requestWithContext)
+        currentHandler = null
+        return result
     }
 
     private fun String.handler() = urls.toList()

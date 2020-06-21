@@ -1,7 +1,10 @@
 package io.github.multicatch.ksock.http
 
+import io.github.multicatch.ksock.http.request.RequestHandler
+import io.github.multicatch.ksock.http.request.RequestHandlerFactory
+
 class HttpConfig {
-    lateinit var handler: (HttpRequest) -> HttpResponse
+    lateinit var handler: RequestHandlerFactory
     var aliasRules: MutableList<Pair<UrlPattern, String>> = mutableListOf()
 }
 

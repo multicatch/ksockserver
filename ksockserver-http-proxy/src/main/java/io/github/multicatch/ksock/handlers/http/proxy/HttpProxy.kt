@@ -7,32 +7,8 @@ import java.net.Socket
 import javax.net.ssl.SSLSocket
 import javax.net.ssl.SSLSocketFactory
 
-
 fun HttpConfig.proxy(targetAddress: String) = apply {
-    this.handler = { request ->
-        val actualRequest = request.copy(
-                headers = request.headers + ("Forwarded" to "for=${request.remoteAddress}")
-        )
-
-        val host = Regex("https?://([^/]*)").find(targetAddress)?.groupValues?.last()
-                ?: targetAddress.substringBefore("/")
-
-        socketOf(host).use {
-            val reader = it.getInputStream().bufferedReader()
-            val writer = it.getOutputStream().bufferedWriter()
-            writer.writeRequest(actualRequest)
-
-            val status = reader.readLine().extractHttpStatus()
-            val headers = reader.lineSequence().extractHeaders()
-            val entity = reader.readEntity(headers)
-
-            ProxiedHttpResponse(
-                    status = status,
-                    originalHeaders = headers,
-                    entity = entity
-            )
-        }
-    }
+    this.handler = ProxyHandlerFactory(targetAddress)
 }
 
 fun socketOf(host: String): Socket {
@@ -74,26 +50,3 @@ fun BufferedWriter.writeRequest(request: HttpRequest) = also { writer ->
     )
     writer.flush()
 }
-
-fun BufferedReader.readEntity(headers: Map<String, String>) =
-        mutableListOf<Byte>().also { byteList ->
-            val contentLength = if (headers["content-encoding"]?.contains("gzip") == true) {
-                Int.MAX_VALUE
-            } else {
-                headers["content-length"]?.toInt() ?: 0
-            }
-
-            val size = if (headers["content-type"]?.contains("utf-8") == true) {
-                contentLength - 2
-            } else {
-                contentLength
-            }
-
-            while (byteList.size != size) {
-                val byte = read()
-                if (byte == -1) {
-                    break
-                }
-                byteList += byte.toByte()
-            }
-        }.toByteArray()

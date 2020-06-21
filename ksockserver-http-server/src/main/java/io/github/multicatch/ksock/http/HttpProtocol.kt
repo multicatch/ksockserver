@@ -3,13 +3,15 @@ package io.github.multicatch.ksock.http
 import io.github.multicatch.ksock.http.exceptions.ExceptionMapper
 import io.github.multicatch.ksock.http.request.EntityReader
 import io.github.multicatch.ksock.http.request.HeaderReader
+import io.github.multicatch.ksock.http.request.RequestHandler
+import io.github.multicatch.ksock.http.request.RequestHandlerFactory
 import io.github.multicatch.ksock.http.response.ResponseWriter
 import io.github.multicatch.ksock.tcp.TcpServerConfiguration
 import io.github.multicatch.ksock.tcp.TcpProtocolProcessor
 import kotlin.reflect.KClass
 
 interface HttpProtocol : TcpProtocolProcessor<HttpRequest, ByteArray> {
-    val urls: MutableList<Pair<UrlPattern, (HttpRequest) -> HttpResponse>>
+    val urls: MutableList<Pair<UrlPattern, RequestHandlerFactory>>
     val headerReaders: MutableList<HeaderReader>
     val entityReaders: MutableList<EntityReader>
     val responseWriters: MutableList<ResponseWriter>
